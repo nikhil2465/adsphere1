@@ -225,6 +225,23 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Performance Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📈 Performance Overview</h2>
+                </div>
+                <canvas id="performanceChart" width="400" height="200"></canvas>
+            </div>
+            
+            <!-- Platform Distribution Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🎯 Platform Distribution</h2>
+                </div>
+                <canvas id="platformChart" width="400" height="200"></canvas>
+            </div>
+        </div>
         </div>
 
         <!-- All Campaigns Tab -->
@@ -549,6 +566,7 @@
             renderAdGroups();
             renderProductAds();
             renderKeywords();
+            renderCharts();
         }
 
         // Tab switching
@@ -839,6 +857,111 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        // Render Charts
+        function renderCharts() {
+            renderPerformanceChart();
+            renderPlatformChart();
+        }
+
+        function renderPerformanceChart() {
+            const canvas = document.getElementById('performanceChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Calculate performance data
+            const allCampaigns = [...mockData.amazon, ...mockData.walmart];
+            const performanceData = allCampaigns.map(campaign => ({
+                name: campaign.name,
+                impressions: campaign.metrics.impressions,
+                clicks: campaign.metrics.clicks,
+                spend: campaign.metrics.spend,
+                roas: campaign.metrics.roas
+            }));
+
+            // Simple bar chart
+            const maxValue = Math.max(...performanceData.map(d => d.impressions));
+            const barWidth = 60;
+            const barSpacing = 20;
+            const chartHeight = 150;
+            const chartWidth = performanceData.length * (barWidth + barSpacing);
+
+            // Clear canvas
+            canvas.width = chartWidth;
+            canvas.height = chartHeight + 40;
+
+            // Draw bars
+            performanceData.forEach((data, index) => {
+                const barHeight = (data.impressions / maxValue) * chartHeight;
+                const x = index * (barWidth + barSpacing) + barSpacing;
+                const y = chartHeight - barHeight;
+
+                // Draw bar
+                ctx.fillStyle = '#007AFF';
+                ctx.fillRect(x, y, barWidth, barHeight);
+
+                // Draw value on top
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(data.impressions.toLocaleString(), x + barWidth/2, y - 5);
+            });
+
+            // Draw axes
+            ctx.strokeStyle = '#ddd';
+            ctx.beginPath();
+            ctx.moveTo(0, chartHeight);
+            ctx.lineTo(chartWidth, chartHeight);
+            ctx.stroke();
+        }
+
+        function renderPlatformChart() {
+            const canvas = document.getElementById('platformChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Calculate platform data
+            const amazonCount = mockData.amazon.length;
+            const walmartCount = mockData.walmart.length;
+            const total = amazonCount + walmartCount;
+
+            // Pie chart data
+            const data = [
+                { label: 'Amazon', value: amazonCount, color: '#FF9500' },
+                { label: 'Walmart', value: walmartCount, color: '#0071CE' }
+            ];
+
+            // Clear canvas
+            canvas.width = 400;
+            canvas.height = 200;
+
+            // Draw pie chart
+            const centerX = 200;
+            const centerY = 100;
+            const radius = 80;
+            let currentAngle = -Math.PI / 2;
+
+            data.forEach((segment) => {
+                const sliceAngle = (segment.value / total) * 2 * Math.PI;
+                
+                // Draw pie slice
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = segment.color;
+                ctx.fill();
+
+                // Draw label
+                const labelAngle = currentAngle + sliceAngle / 2;
+                const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+                const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${segment.label} (${segment.value})`, labelX, labelY);
+                
+                currentAngle += sliceAngle;
+            });
         }
 
         // Initialize on load
